@@ -1,13 +1,20 @@
-import React from "react";
-import { useEffect, useState } from "react";
-import { useRef } from "react";
-import { useContext } from "react";
-import { AppContext } from "../App";
+import React, { useEffect, useState, useRef, useContext } from "react";
 import axios from "axios";
+import { AppContext } from "../App";
+import "./Users.css";
+
 export default function Users() {
-  const [users, setUsers] = useState([]);
   const { user } = useContext(AppContext);
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  const [users, setUsers] = useState([]);
   const [error, setError] = useState();
+  const [page, setPage] = useState(1);
+  const [limit] = useState(2);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchVal, setSearchVal] = useState("");
+  const [editId, setEditId] = useState();
+
   const frmRef = useRef();
   const [form, setForm] = useState({
     firstName: "",
@@ -16,50 +23,40 @@ export default function Users() {
     password: "",
     role: "",
   });
-  const [page, setPage] = useState(1);
-  const [searchVal, setSearchVal] = useState("");
-  const [totalPages, setTotalPages] = useState(1);
-  const [limit, setLimit] = useState(2);
-  const [editId, setEditId] = useState();
-  const API_URL = import.meta.env.VITE_API_URL;
+
   const fetchUsers = async () => {
     try {
       setError("Loading...");
       const url = `${API_URL}/api/users/?page=${page}&limit=${limit}&search=${searchVal}`;
       const result = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
+        headers: { Authorization: `Bearer ${user.token}` },
       });
       setUsers(result.data.users);
       setTotalPages(result.data.total);
       setError();
     } catch (err) {
-      console.log(err);
-      setError("Something went wrong");
-    }
-  };
-  useEffect(() => {
-    fetchUsers();
-  }, [page]);
-  const handleDelete = async (id) => {
-    try {
-      const url = `${API_URL}/api/users/${id}`;
-      const result = await axios.delete(url, {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      });
-      setError("User Deleted Successfully");
-      fetchUsers();
-    } catch (err) {
-      console.log(err);
+      console.error(err);
       setError("Something went wrong");
     }
   };
 
+  useEffect(() => {
+    fetchUsers();
+  }, [page]);
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const resetForm = () => {
+    setForm({
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+      role: "",
+    });
+    setEditId(null);
   };
 
   const handleAdd = async (e) => {
@@ -70,17 +67,14 @@ export default function Users() {
       return;
     }
     try {
-      const url = `${API_URL}/api/users`;
-      const result = await axios.post(url, form, {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
+      await axios.post(`${API_URL}/api/users`, form, {
+        headers: { Authorization: `Bearer ${user.token}` },
       });
-      setError("User added succesfully");
+      setError("User added successfully");
       fetchUsers();
       resetForm();
     } catch (err) {
-      console.log(err);
+      console.error(err);
       setError("Something went wrong");
     }
   };
@@ -88,7 +82,6 @@ export default function Users() {
   const handleEdit = (user) => {
     setEditId(user._id);
     setForm({
-      ...form,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
@@ -105,144 +98,128 @@ export default function Users() {
       return;
     }
     try {
-      const url = `${API_URL}/api/users/${editId}`;
-      const result = await axios.patch(url, form, {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
+      await axios.patch(`${API_URL}/api/users/${editId}`, form, {
+        headers: { Authorization: `Bearer ${user.token}` },
       });
       fetchUsers();
-      setEditId();
       resetForm();
       setError("User information updated successfully");
     } catch (err) {
-      console.log(err);
+      console.error(err);
       setError("Something went wrong");
     }
   };
 
-  const handleCancel = () => {
-    setEditId();
-    resetForm();
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`${API_URL}/api/users/${id}`, {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      setError("User deleted successfully");
+      fetchUsers();
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong");
+    }
   };
 
-  const resetForm = () => {
-    setForm({
-      ...form,
-      firstName: "",
-      lastName: "",
-      email: "",
-      password: "",
-      role: "",
-    });
-  };
   return (
-    <div>
+    <div className="user-management-container">
       <h2>User Management</h2>
-      {error}
-      <div>
-        <form ref={frmRef}>
-          <input
-            name="firstName"
-            value={form.firstName}
-            type="text"
-            placeholder="First Name"
-            onChange={handleChange}
-            required
-          />
-          <input
-            name="lastName"
-            value={form.lastName}
-            type="text"
-            placeholder="Last Name"
-            onChange={handleChange}
-            required
-          />
-          <input
-            name="email"
-            value={form.email}
-            type="text"
-            placeholder="Email Address"
-            onChange={handleChange}
-            required
-          />
-          <input
-            name="password"
-            value={form.password}
-            type="password"
-            placeholder="New Password"
-            onChange={handleChange}
-            required
-          />
-          <select
-            name="role"
-            value={form.role}
-            required
-            onChange={handleChange}
-          >
-            <option value="">--Select Role--</option>
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-          </select>
-          {/* <input
-            name="role"
-            value={form.role}
-            type="text"
-            onChange={handleChange}
-            placeholder="Role"
-          /> */}
+      {error && <div className="error-message">{error}</div>}
 
-          {editId ? (
-            <>
-              <button onClick={handleUpdate}>Update</button>
-              <button onClick={handleCancel}>Cancel</button>
-            </>
-          ) : (
-            <button onClick={handleAdd}>Add</button>
-          )}
-        </form>
+      <form ref={frmRef} className="user-form">
+        <input
+          name="firstName"
+          value={form.firstName}
+          type="text"
+          placeholder="First Name"
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="lastName"
+          value={form.lastName}
+          type="text"
+          placeholder="Last Name"
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="email"
+          value={form.email}
+          type="email"
+          placeholder="Email Address"
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="password"
+          value={form.password}
+          type="password"
+          placeholder="New Password"
+          onChange={handleChange}
+          required
+        />
+        <select name="role" value={form.role} onChange={handleChange} required>
+          <option value="">--Select Role--</option>
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
+
+        {editId ? (
+          <>
+            <button onClick={handleUpdate}>Update</button>
+            <button onClick={resetForm}>Cancel</button>
+          </>
+        ) : (
+          <button onClick={handleAdd}>Add</button>
+        )}
+      </form>
+
+      <div className="search-bar">
+        <input
+          type="text"
+          placeholder="Search users..."
+          onChange={(e) => setSearchVal(e.target.value)}
+        />
+        <button onClick={fetchUsers}>Search</button>
       </div>
-      <div>
-        <input type="text" onChange={(e) => setSearchVal(e.target.value)} />
-        <button onClick={() => fetchUsers()}>Search</button>
-      </div>
-      <div>
-        <table border="1">
-          <thead>
-            <tr>
-              <th>First Name</th>
-              <th>Last Name</th>
-              <th>Email Address</th>
-              <th>Role</th>
-            </tr>
-          </thead>
+
+      <table className="user-table">
+        <thead>
+          <tr>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Email Address</th>
+            <th>Role</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
           {users.map((value) => (
-            <tbody key={value._id}>
-              <tr>
-                <td>{value.firstName}</td>
-                <td>{value.lastName}</td>
-                <td>{value.email}</td>
-                <td>{value.role}</td>
-                <td>
-                  <button onClick={() => handleEdit(value)}>Edit</button>
-                  <button onClick={() => handleDelete(value._id)}>
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            </tbody>
+            <tr key={value._id}>
+              <td>{value.firstName}</td>
+              <td>{value.lastName}</td>
+              <td>{value.email}</td>
+              <td>{value.role}</td>
+              <td className="user-actions">
+                <button onClick={() => handleEdit(value)}>Edit</button>
+                <button onClick={() => handleDelete(value._id)}>Delete</button>
+              </td>
+            </tr>
           ))}
-        </table>
-      </div>
-      <div>
+        </tbody>
+      </table>
+
+      <div className="pagination">
         <button disabled={page === 1} onClick={() => setPage(page - 1)}>
           Previous
         </button>
-        Page {page} of {totalPages}
-        <button
-          disabled={page === totalPages}
-          onClick={() => setPage(page + 1)}
-        >
+        <span>
+          Page {page} of {totalPages}
+        </span>
+        <button disabled={page === totalPages} onClick={() => setPage(page + 1)}>
           Next
         </button>
       </div>

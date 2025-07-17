@@ -35,3 +35,21 @@
 .nav-links a:hover {
   background-color: #4c566a;
 }
+
+.welcome-text {
+  margin-left: auto;
+  font-size: 16px;
+  color: #ffffff;
+  padding: 0 15px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.cart-count {
+  background-color: #ff3d00;
+  color: white;
+  padding: 2px 8px;
+  margin-left: 6px;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: bold;
+}

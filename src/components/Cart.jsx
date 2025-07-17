@@ -3,6 +3,7 @@ import { useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppContext } from "../App";
 import axios from "axios";
+import "./Cart.css"; 
 export default function Cart() {
   const { user, cart, setCart } = useContext(AppContext);
   const [orderValue, setOrderValue] = useState(0);
@@ -50,34 +51,35 @@ export default function Cart() {
   };
 
   return (
-    <div>
-      <h2>My Cart</h2>
-      {error}
-      {cart &&
-        cart.map(
-          (value) =>
-            value.qty > 0 && (
-              <li key={value._id}>
-                {value.productName}-{value.price}-
-                <button onClick={() => decrement(value._id, value.qty)}>
-                  -
-                </button>
+    <div className="cart-container">
+  <h2 className="cart-title">My Cart</h2>
+  {error && <div className="cart-error">{error}</div>}
+  <ul className="cart-list">
+    {cart &&
+      cart.map(
+        (value) =>
+          value.qty > 0 && (
+            <li className="cart-item" key={value._id}>
+              <span>{value.productName}</span>
+              <span>₹{value.price}</span>
+              <div className="qty-controls">
+                <button className="qty-button" onClick={() => decrement(value._id, value.qty)}>-</button>
                 {value.qty}
-                <button onClick={() => increment(value._id, value.qty)}>
-                  +
-                </button>
-                -{value.price * value.qty}
-              </li>
-            )
-        )}
-      <h5>Order Value:{orderValue}</h5>
-      <p>
-        {user?.token ? (
-          <button onClick={placeOrder}>Place Order</button>
-        ) : (
-          <button onClick={() => Navigate("/login")}>Login to Order</button>
-        )}
-      </p>
-    </div>
+                <button className="qty-button" onClick={() => increment(value._id, value.qty)}>+</button>
+              </div>
+              <span>₹{value.price * value.qty}</span>
+            </li>
+          )
+      )}
+  </ul>
+  <div className="order-summary">Order Value: ₹{orderValue}</div>
+  <p>
+    {user?.token ? (
+      <button className="order-button" onClick={placeOrder}>Place Order</button>
+    ) : (
+      <button className="order-button" onClick={() => Navigate("/login")}>Login to Order</button>
+    )}
+  </p>
+</div>
   );
 }
