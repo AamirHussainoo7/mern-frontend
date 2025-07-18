@@ -25,12 +25,23 @@ export default function Product() {
   }, []);
 
   const addToCart = (product) => {
-    const found = cart.find((item) => item._id === product._id);
-    if (!found) {
-      product.qty = 1;
-      setCart([...cart, product]);
+  setCart((prevCart) => {
+    const existingItem = prevCart.find((item) => item._id === product._id);
+
+    if (existingItem) {
+      // Increase quantity if product already exists
+      return prevCart.map((item) =>
+        item._id === product._id
+          ? { ...item, qty: item.qty + 1 }
+          : item
+      );
+    } else {
+      // Add new product with qty = 1
+      return [...prevCart, { ...product, qty: 1 }];
     }
-  };
+  });
+};
+
 
   return (
     <div className="product-page">
